@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Clicker Clone</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-wrapper">
+        <header class="game-header">
+            <div class="logo">
+                <span class="logo-title">Cookie Clicker</span>
+                <span class="logo-subtitle">Clone Edition</span>
+                <span class="logo-secret">Rowan Marflitt</span>
+                <a id="externalLink" href="./index.html" class="external-link">Local: index.html</a>
+            </div>
+            <div class="status-bar">
+                <div class="status-item">
+                    <span class="status-label">Cookies:</span>
+                    <span id="cookies">0</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Per second:</span>
+                    <span id="cps">0</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Clicks:</span>
+                    <span id="clicks">0</span>
+                </div>
+            </div>
+            <!-- Big Achievements Button -->
+            <div style="display:flex;align-items:center;gap:12px;margin-left:18px;">
+                <button id="bigAchievementsBtn" class="big-achievements-btn" title="Achievements">Achievements (<span id="achCount">0</span>)</button>
+            </div>
+        </header>
+
+        <div class="game-layout">
+            <main class="main-panel">
+                <div class="cookie-card">
+                    <button id="cookieBtn" class="big-cookie" title="Click the cookie" aria-label="Click the cookie">
+                        <img src="cookie.jpg" alt="Cookie" />
+                    </button>
+                </div>
+                <div class="flavor-text">
+                    Click the cookie to earn cookies. Buy buildings to increase your cookie production and watch your empire grow.
+                </div>
+            </main>
+
+            <aside class="sidebar">
+                <section class="panel store-panel">
+                    <h2>Buildings</h2>
+                    <div id="buildingsContainer" class="buildings-container"></div>
+                </section>
+
+                <section class="panel admin-panel">
+                    <h2>Admin Panel</h2>
+                    <div class="admin-controls">
+                        <input id="adminCommandInput" type="text" placeholder="Example: add cookies 10000" />
+                        <button id="adminExecuteBtn" type="button">Apply</button>
+                    </div>
+                    <div class="admin-extra-controls">
+                        <div class="admin-group">
+                            <input id="adminCookieAmountInput" type="number" min="0" placeholder="Cookies amount" />
+                            <button id="adminAddCookieAmountBtn" type="button">Add cookies</button>
+                        </div>
+                        <div class="admin-group">
+                            <input id="adminBuildingIdInput" type="text" placeholder="Building id/name" />
+                            <input id="adminBuildingCountInput" type="number" min="1" placeholder="Count" />
+                            <button id="adminAddBuildingBtn" type="button">Add building</button>
+                        </div>
+                    </div>
+                    <div class="admin-buttons">
+                        <button id="adminAddCookiesBtn" type="button">+100k cookies</button>
+                        <button id="adminAddMillionCookiesBtn" type="button">+1M cookies</button>
+                        <button id="adminUnlockBtn" type="button">Unlock all</button>
+                        <button id="adminExportBtn" type="button">Export save</button>
+                        <button id="adminImportBtn" type="button">Import save</button>
+                        <button id="adminResetBtn" type="button">Reset game</button>
+                    </div>
+                    <div id="adminOutput" class="admin-output">Available commands: add cookies X, set cookies X, add &lt;building&gt; &lt;count&gt;, unlock all, reset.</div>
+                </section>
+                <section class="panel upgrades-panel">
+                    <h2>Upgrades</h2>
+                    <div id="upgradesContainer" class="buildings-container"></div>
+                    <div style="margin-top:8px; text-align:center;display:flex;gap:8px;justify-content:center;">
+                        <button type="button" id="buyAllUpgrades" class="small-button buy-all-btn">Buy All</button>
+                        <button type="button" id="loadMoreUpgrades" class="small-button">Load more</button>
+                    </div>
+                </section>
+
+                <section class="panel achievements-panel">
+                    <h2>Achievements</h2>
+                    <div id="achievementsContainer" class="buildings-container"></div>
+                    <div style="margin-top:8px; text-align:center;"><button type="button" id="loadMoreAchievements" class="small-button">Load more</button></div>
+                </section>
+            </aside>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <div id="notificationContainer" class="notification-container"></div>
+</body>
+</html>
