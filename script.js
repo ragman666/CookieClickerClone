@@ -580,14 +580,10 @@ function startAutoProduction() {
     setInterval(saveGame, SAVE_INTERVAL_MS);
 }
 
-function stopHoldBuy(event) {
-    if (event && event.target && event.target.releasePointerCapture && event.pointerId != null) {
-        try {
-            event.target.releasePointerCapture(event.pointerId);
-        } catch (error) {
-            // ignore capture release errors for removed elements
-        }
-    }
+function stopHoldBuy() {
+    document.removeEventListener('mouseup', stopHoldBuy);
+    document.removeEventListener('touchend', stopHoldBuy);
+    document.removeEventListener('touchcancel', stopHoldBuy);
 
     if (holdBuyTimer) {
         clearTimeout(holdBuyTimer);
@@ -599,9 +595,13 @@ function stopHoldBuy(event) {
     }
 }
 
-function startHoldBuy(building, card, pointerId) {
+function startHoldBuy(building, card) {
     stopHoldBuy();
     buyBuilding(building, { renderBuildings: false, card });
+
+    document.addEventListener('mouseup', stopHoldBuy);
+    document.addEventListener('touchend', stopHoldBuy);
+    document.addEventListener('touchcancel', stopHoldBuy);
 
     holdBuyTimer = setTimeout(() => {
         holdBuyInterval = setInterval(() => {
@@ -633,17 +633,17 @@ function renderBuildings() {
         `;
 
         if (canAfford) {
-            card.addEventListener('pointerdown', event => {
+            card.addEventListener('mousedown', event => {
                 if (event.button !== 0) return;
                 event.preventDefault();
-                if (card.setPointerCapture) {
-                    card.setPointerCapture(event.pointerId);
-                }
-                startHoldBuy(building, card, event.pointerId);
+                startHoldBuy(building, card);
             });
-            card.addEventListener('pointerup', event => stopHoldBuy(event));
-            card.addEventListener('pointercancel', event => stopHoldBuy(event));
-            card.addEventListener('pointerleave', event => stopHoldBuy(event));
+            card.addEventListener('touchstart', event => {
+                event.preventDefault();
+                startHoldBuy(building, card);
+            }, { passive: false });
+            card.addEventListener('mouseleave', stopHoldBuy);
+            card.addEventListener('blur', stopHoldBuy);
         }
 
         DOM.buildingsContainer.appendChild(card);

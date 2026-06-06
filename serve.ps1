@@ -1,9 +1,9 @@
 param(
-  [int]$Port = 8000
+  [int]$Port = 10000
 )
 
- 
-
+$root = Get-Location
+$prefix = "http://localhost:$Port/"
 
 $mime = @{
   ".html" = "text/html"
