@@ -366,6 +366,12 @@ body::before {
     cursor: not-allowed;
 }
 
+.upgrade-item.bought {
+    background: linear-gradient(90deg, rgba(196, 154, 255, 0.08), rgba(255, 220, 120, 0.06));
+    border-color: rgba(255, 200, 100, 0.24);
+    box-shadow: 0 6px 18px rgba(255, 190, 100, 0.08);
+}
+
 .small-button {
     border: none;
     background: rgba(255,255,255,0.06);
