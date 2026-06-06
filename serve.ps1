@@ -1,5 +1,5 @@
 param(
-  [int]$Port = 10000
+  [int]$Port = 9090
 )
 
 $root = Get-Location
@@ -25,13 +25,74 @@ try {
   $listener.Start()
   Write-Host "Serving $($root) at $prefix`nPress Ctrl+C to stop."
   while ($listener.IsListening) {
-    $context = $listener.GetContext()
-    Start-Job -ArgumentList $context -ScriptBlock {
-      param($ctx)
-      try {
-        $req = $ctx.Request
-        $path = $req.Url.AbsolutePath.TrimStart('/')
-        if ([string]::IsNullOrEmpty($path)) { $path = 'index.html' }
+    $ctx = $listener.GetContext()
+    $corsHeaders = @{
+      'Access-Control-Allow-Origin' = '*'
+      'Access-Control-Allow-Methods' = 'GET, POST, OPTIONS'
+      'Access-Control-Allow-Headers' = 'Content-Type'
+    }
+    try {
+      $req = $ctx.Request
+      if ($req.HttpMethod -eq 'OPTIONS') {
+        foreach ($key in $corsHeaders.Keys) { $ctx.Response.AddHeader($key, $corsHeaders[$key]) }
+        $ctx.Response.StatusCode = 204
+        continue
+      }
+
+      $path = $req.Url.AbsolutePath.TrimStart('/')
+      if ([string]::IsNullOrEmpty($path)) { $path = 'index.html' }
+
+      if ($path -eq 'api/users') {
+        foreach ($key in $corsHeaders.Keys) { $ctx.Response.AddHeader($key, $corsHeaders[$key]) }
+        $ctx.Response.ContentType = 'application/json'
+        $usersFile = Join-Path (Get-Location) 'usernames.json'
+        if (-not (Test-Path $usersFile)) {
+          Set-Content -Path $usersFile -Value '[]' -Encoding UTF8
+        }
+        if ($req.HttpMethod -eq 'GET') {
+          $users = Get-Content -Path $usersFile -Raw | ConvertFrom-Json
+          $json = [System.Text.Json.JsonSerializer]::Serialize($users)
+          $buf = [System.Text.Encoding]::UTF8.GetBytes($json)
+          $ctx.Response.ContentLength64 = $buf.Length
+          $ctx.Response.OutputStream.Write($buf, 0, $buf.Length)
+        } elseif ($req.HttpMethod -eq 'POST') {
+          $input = New-Object System.IO.StreamReader($req.InputStream)
+          $body = $input.ReadToEnd()
+          $input.Close()
+          try {
+            $data = ConvertFrom-Json $body
+            $username = ($data.username -as [string]).Trim()
+            if ([string]::IsNullOrEmpty($username)) {
+              $ctx.Response.StatusCode = 400
+              $buf = [System.Text.Encoding]::UTF8.GetBytes('{"error":"username required"}')
+              $ctx.Response.ContentLength64 = $buf.Length
+              $ctx.Response.OutputStream.Write($buf, 0, $buf.Length)
+            } else {
+              $users = Get-Content -Path $usersFile -Raw | ConvertFrom-Json
+              if ($users -eq $null) { $users = @() }
+              if ($users -notcontains $username) {
+                $users += $username
+                $users | ConvertTo-Json -Depth 10 | Set-Content -Path $usersFile -Encoding UTF8
+              }
+              $response = @{ saved = $true; username = $username; users = $users }
+              $json = [System.Text.Json.JsonSerializer]::Serialize($response)
+              $buf = [System.Text.Encoding]::UTF8.GetBytes($json)
+              $ctx.Response.ContentLength64 = $buf.Length
+              $ctx.Response.OutputStream.Write($buf, 0, $buf.Length)
+            }
+          } catch {
+            $ctx.Response.StatusCode = 400
+            $buf = [System.Text.Encoding]::UTF8.GetBytes('{"error":"invalid json"}')
+            $ctx.Response.ContentLength64 = $buf.Length
+            $ctx.Response.OutputStream.Write($buf, 0, $buf.Length)
+          }
+        } else {
+          $ctx.Response.StatusCode = 405
+          $buf = [System.Text.Encoding]::UTF8.GetBytes('{"error":"method not allowed"}')
+          $ctx.Response.ContentLength64 = $buf.Length
+          $ctx.Response.OutputStream.Write($buf, 0, $buf.Length)
+        }
+      } else {
         $filePath = Join-Path (Get-Location) $path
         if (Test-Path $filePath -PathType Leaf) {
           $ext = [IO.Path]::GetExtension($filePath).ToLower()
@@ -47,12 +108,12 @@ try {
           $ctx.Response.ContentLength64 = $buf.Length
           $ctx.Response.OutputStream.Write($buf, 0, $buf.Length)
         }
-      } catch {
-        # ignore per-request errors
-      } finally {
-        $ctx.Response.OutputStream.Close()
       }
-    } | Out-Null
+    } catch {
+      # ignore per-request errors
+    } finally {
+      $ctx.Response.OutputStream.Close()
+    }
   }
 } catch {
   Write-Error "Failed to start listener: $_"

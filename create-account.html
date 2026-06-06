@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Clicker Clone — Create Account</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="create">
+    <div class="login-screen">
+        <div class="login-box">
+            <h1>Create Your Account</h1>
+            <p>Enter a username to create your account and start playing.</p>
+            <input id="usernameInput" type="text" placeholder="Username" autocomplete="username" />
+            <label class="checkbox-row">
+                <input id="rememberCheckbox" type="checkbox" />
+                <span>Save login details</span>
+            </label>
+            <button id="createAccountBtn" type="button" class="primary-button">Create Account</button>
+            <div id="createStatus" class="login-status"></div>
+            <p class="page-link">Already have an account? <a id="loginLink" href="login.html">Login here</a>.</p>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

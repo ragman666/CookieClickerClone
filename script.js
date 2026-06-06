@@ -64,6 +64,8 @@ const gameState = {
     achievementsUnlocked: []
 };
 
+const pageType = document.body.dataset.page || 'game';
+
 const DOM = {
     cookieBtn: document.getElementById('cookieBtn'),
     cookiesDisplay: document.getElementById('cookies'),
@@ -83,7 +85,13 @@ const DOM = {
     adminExportBtn: document.getElementById('adminExportBtn'),
     adminImportBtn: document.getElementById('adminImportBtn'),
     adminResetBtn: document.getElementById('adminResetBtn'),
-    adminOutput: document.getElementById('adminOutput')
+    adminOutput: document.getElementById('adminOutput'),
+    usernameInput: document.getElementById('usernameInput'),
+    loginBtn: document.getElementById('loginBtn'),
+    logoutBtn: document.getElementById('logoutBtn'),
+    usernameDisplay: document.getElementById('usernameDisplay'),
+    loginStatus: document.getElementById('loginStatus'),
+    createStatus: document.getElementById('createStatus')
 };
 
 const AUTO_TICK_MS = 100;
@@ -97,6 +105,76 @@ let holdBuyTimer = null;
 let holdBuyInterval = null;
 
 function init() {
+    const savedUser = getCurrentUser();
+
+    if (pageType === 'login') {
+        const accounts = getAccounts();
+        if (savedUser) {
+            window.location.href = 'index.html';
+            return;
+        }
+        if (accounts.length === 0) {
+            window.location.href = 'create-account.html';
+            return;
+        }
+
+        DOM.usernameInput = document.getElementById('usernameInput');
+        DOM.rememberCheckbox = document.getElementById('rememberCheckbox');
+        DOM.loginBtn = document.getElementById('loginBtn');
+        DOM.loginStatus = document.getElementById('loginStatus');
+        DOM.createAccountLink = document.getElementById('createAccountLink');
+
+        if (DOM.loginBtn) {
+            DOM.loginBtn.addEventListener('click', handleLogin);
+        }
+        if (DOM.usernameInput) {
+            DOM.usernameInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+        }
+        if (DOM.createAccountLink) {
+            DOM.createAccountLink.addEventListener('click', event => {
+                event.preventDefault();
+                window.location.href = 'create-account.html';
+            });
+        }
+        return;
+    }
+    if (pageType === 'create') {
+        if (savedUser) {
+            window.location.href = 'index.html';
+            return;
+        }
+
+        DOM.usernameInput = document.getElementById('usernameInput');
+        DOM.rememberCheckbox = document.getElementById('rememberCheckbox');
+        DOM.createAccountBtn = document.getElementById('createAccountBtn');
+        DOM.createStatus = document.getElementById('createStatus');
+        DOM.loginLink = document.getElementById('loginLink');
+
+        if (DOM.createAccountBtn) {
+            DOM.createAccountBtn.addEventListener('click', handleCreateAccount);
+        }
+        if (DOM.usernameInput) {
+            DOM.usernameInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleCreateAccount(); });
+        }
+        if (DOM.loginLink) {
+            DOM.loginLink.addEventListener('click', event => {
+                event.preventDefault();
+                window.location.href = 'login.html';
+            });
+        }
+        return;
+    }
+
+    if (!savedUser) {
+        const accounts = getAccounts();
+        if (accounts.length === 0) {
+            window.location.href = 'create-account.html';
+        } else {
+            window.location.href = 'login.html';
+        }
+        return;
+    }
+
     loadGame();
     updateDisplay();
     startAutoProduction();
@@ -127,7 +205,7 @@ function init() {
         DOM.loadMoreUpgrades.addEventListener('click', () => renderUpgrades(true));
     }
     if (DOM.buyAllUpgradesBtn) {
-        DOM.buyAllUpgradesBtn.addEventListener('click', buyAllUpgrades);
+        DOM.buyAllUpgradesBtn.addEventListener('click', () => buyAllUpgrades(false));
     }
     if (DOM.loadMoreAchievements) {
         DOM.loadMoreAchievements.addEventListener('click', () => renderAchievements(true));
@@ -142,13 +220,19 @@ function init() {
         });
     }
 
-    DOM.cookieBtn.addEventListener('click', handleCookieClick);
-    DOM.adminExecuteBtn.addEventListener('click', handleAdminCommand);
-    DOM.adminCommandInput.addEventListener('keydown', event => {
-        if (event.key === 'Enter') {
-            handleAdminCommand();
-        }
-    });
+    if (DOM.cookieBtn) {
+        DOM.cookieBtn.addEventListener('click', handleCookieClick);
+    }
+    if (DOM.adminExecuteBtn) {
+        DOM.adminExecuteBtn.addEventListener('click', handleAdminCommand);
+    }
+    if (DOM.adminCommandInput) {
+        DOM.adminCommandInput.addEventListener('keydown', event => {
+            if (event.key === 'Enter') {
+                handleAdminCommand();
+            }
+        });
+    }
 
     if (DOM.adminAddCookieAmountBtn) {
         DOM.adminAddCookieAmountBtn.addEventListener('click', adminAddCookieAmount);
@@ -156,18 +240,36 @@ function init() {
     if (DOM.adminAddBuildingBtn) {
         DOM.adminAddBuildingBtn.addEventListener('click', adminAddBuilding);
     }
-    DOM.adminAddCookiesBtn.addEventListener('click', () => runAdminCommand('add cookies 100000'));
+    if (DOM.adminAddCookiesBtn) {
+        DOM.adminAddCookiesBtn.addEventListener('click', () => runAdminCommand('add cookies 100000'));
+    }
     if (DOM.adminAddMillionCookiesBtn) {
         DOM.adminAddMillionCookiesBtn.addEventListener('click', () => runAdminCommand('add cookies 1000000'));
     }
-    DOM.adminUnlockBtn.addEventListener('click', () => runAdminCommand('unlock all'));
+    if (DOM.adminUnlockBtn) {
+        DOM.adminUnlockBtn.addEventListener('click', () => runAdminCommand('unlock all'));
+    }
     if (DOM.adminExportBtn) {
         DOM.adminExportBtn.addEventListener('click', exportSaveData);
     }
     if (DOM.adminImportBtn) {
         DOM.adminImportBtn.addEventListener('click', importSaveData);
     }
-    DOM.adminResetBtn.addEventListener('click', () => runAdminCommand('reset'));
+    if (DOM.adminResetBtn) {
+        DOM.adminResetBtn.addEventListener('click', () => runAdminCommand('reset'));
+    }
+
+    DOM.usernameInput = document.getElementById('usernameInput');
+    DOM.loginBtn = document.getElementById('loginBtn');
+    DOM.logoutBtn = document.getElementById('logoutBtn');
+    DOM.usernameDisplay = document.getElementById('usernameDisplay');
+
+    if (DOM.logoutBtn) {
+        DOM.logoutBtn.addEventListener('click', handleLogout);
+    }
+
+    // show loaded username
+    updateUsernameDisplay();
 }
 
 function handleCookieClick(event) {
@@ -286,7 +388,16 @@ function renderUpgrades(loadMore = false) {
         const card = document.createElement('div');
         card.className = `upgrade-item${canBuy ? '' : ' disabled'}`;
         card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;"><strong>${u.name}</strong><span>${formatNumber(u.cost)}</span></div><div style="font-size:0.85rem;color:#d4c3a8;margin-top:6px">${u.description}</div>`;
-        if (canBuy) card.addEventListener('click', () => buyUpgrade(u.id));
+        // Always attach a click handler so clicks work even if affordability changes
+        card.addEventListener('click', () => {
+            if (gameState.upgradesUnlocked.includes(u.id)) return;
+            if (gameState.cookies >= u.cost) {
+                buyUpgrade(u.id);
+            } else {
+                setAdminStatus('Not enough cookies for upgrade.');
+                showNotification('Not enough cookies for that upgrade.');
+            }
+        });
         DOM.upgradesContainer.appendChild(card);
     }
     upgradesRenderIndex = end;
@@ -310,13 +421,30 @@ function buyUpgrade(id) {
     saveGame();
 }
 
-function buyAllUpgrades() {
+function buyAllUpgrades(retried = false) {
     const affordableUpgrades = ALL_UPGRADES
         .filter(u => !gameState.upgradesUnlocked.includes(u.id) && gameState.cookies >= u.cost)
         .sort((a, b) => a.cost - b.cost);
 
     if (!affordableUpgrades.length) {
-        setAdminStatus('No affordable upgrades available.');
+        if (!retried) {
+            const TEST_COOKIE_GRANT = 10000; // small test amount
+            setAdminStatus('No affordable upgrades available. Granting test cookies.');
+            gameState.cookies += TEST_COOKIE_GRANT;
+            showNotification(`Added ${formatNumber(TEST_COOKIE_GRANT)} test cookies to try upgrades.`);
+            if (DOM.upgradesContainer) {
+                DOM.upgradesContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            updateDisplay();
+            saveGame();
+            // retry once after granting
+            setTimeout(() => buyAllUpgrades(true), 150);
+            return;
+        }
+
+        // already retried once and still nothing affordable
+        setAdminStatus('No affordable upgrades available even after granting test cookies.');
+        showNotification('Still no affordable upgrades available.');
         return;
     }
 
@@ -501,6 +629,11 @@ function executeAdminCommand(command) {
         return 'Game reset complete.';
     }
 
+    if (command === 'reset accounts') {
+        resetAccounts();
+        return 'All accounts have been reset.';
+    }
+
     if (command === 'unlock all') {
         gameState.buildings.forEach(building => {
             building.cost = 0;
@@ -552,11 +685,24 @@ function executeAdminCommand(command) {
         return `Added ${count} ${target.name}(s).`;
     }
 
-    return 'Unknown admin command. Try: add cookies 10000, set cookies 50000, unlock all, reset.';
+    return 'Unknown admin command. Try: add cookies 10000, set cookies 50000, unlock all, reset, reset accounts.';
+}
+
+function resetAccounts() {
+    localStorage.removeItem('cookieClickerAccounts');
+    clearCurrentUser();
 }
 
 function setAdminStatus(message) {
-    DOM.adminOutput.textContent = message;
+    if (DOM.adminOutput) {
+        DOM.adminOutput.textContent = message;
+    } else if (DOM.loginStatus) {
+        DOM.loginStatus.textContent = message;
+    } else if (DOM.createStatus) {
+        DOM.createStatus.textContent = message;
+    } else {
+        console.log(message);
+    }
 }
 
 function resetGame() {
@@ -568,6 +714,128 @@ function resetGame() {
         building.cost = building.baseCost;
     });
     localStorage.removeItem('cookieClickerSave');
+}
+
+function getAccounts() {
+    const raw = localStorage.getItem('cookieClickerAccounts');
+    if (!raw) return [];
+    try {
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+
+        let normalized = [];
+        let changed = false;
+
+        parsed.forEach(item => {
+            if (item && typeof item.username === 'string') {
+                const account = { username: item.username };
+                normalized.push(account);
+                if ('password' in item) {
+                    changed = true;
+                }
+            }
+        });
+
+        if (changed) {
+            saveAccounts(normalized);
+        }
+
+        return normalized;
+    } catch {
+        return [];
+    }
+}
+
+function saveAccounts(accounts) {
+    localStorage.setItem('cookieClickerAccounts', JSON.stringify(accounts));
+}
+
+function findAccount(username) {
+    return getAccounts().find(account => account.username === username);
+}
+
+function getCurrentUser() {
+    return localStorage.getItem('cookieClickerUser') || sessionStorage.getItem('cookieClickerUser') || '';
+}
+
+function clearCurrentUser() {
+    localStorage.removeItem('cookieClickerUser');
+    sessionStorage.removeItem('cookieClickerUser');
+}
+
+function setCurrentUser(username, remember = false) {
+    if (remember) {
+        localStorage.setItem('cookieClickerUser', username);
+        sessionStorage.removeItem('cookieClickerUser');
+    } else {
+        sessionStorage.setItem('cookieClickerUser', username);
+        localStorage.removeItem('cookieClickerUser');
+    }
+    gameState.username = username;
+}
+
+// --- Login / username handling ---
+function updateUsernameDisplay() {
+    const saved = getCurrentUser();
+    const name = saved || gameState.username || '';
+    gameState.username = name || '';
+    if (DOM.usernameDisplay) DOM.usernameDisplay.textContent = name ? name : 'Guest';
+    if (DOM.usernameInput) DOM.usernameInput.value = '';
+    if (DOM.loginBtn) DOM.loginBtn.style.display = name ? 'none' : '';
+    if (DOM.logoutBtn) DOM.logoutBtn.style.display = name ? '' : 'none';
+}
+
+async function handleLogin() {
+    if (!DOM.usernameInput) return setAdminStatus('Login control missing.');
+    const name = DOM.usernameInput.value.trim();
+    if (!name) return setAdminStatus('Enter a username to login.');
+
+    const account = findAccount(name);
+    if (!account) {
+        return setAdminStatus('Account not found. Create one first.');
+    }
+
+    const remember = DOM.rememberCheckbox?.checked === true;
+    setCurrentUser(name, remember);
+    saveGame();
+    updateUsernameDisplay();
+    setAdminStatus(`Logged in as ${name}.`);
+    showNotification(`Welcome, ${name}`);
+
+    window.location.href = 'index.html';
+}
+
+function handleCreateAccount() {
+    if (!DOM.usernameInput) return setAdminStatus('Create account controls missing.');
+    const name = DOM.usernameInput.value.trim();
+    if (!name) return setAdminStatus('Enter a username to create an account.');
+
+    const existing = findAccount(name);
+    if (existing) {
+        return setAdminStatus('That username is already taken. Choose another.');
+    }
+
+    const accounts = getAccounts();
+    accounts.push({ username: name });
+    saveAccounts(accounts);
+    const remember = DOM.rememberCheckbox?.checked === true;
+    setCurrentUser(name, remember);
+    saveGame();
+    setAdminStatus(`Account created for ${name}. Redirecting to game...`);
+    showNotification(`Account created for ${name}`);
+
+    window.location.href = 'index.html';
+}
+
+function handleLogout() {
+    gameState.username = '';
+    clearCurrentUser();
+    saveGame();
+    updateUsernameDisplay();
+    setAdminStatus('Logged out.');
+    if (pageType === 'game') {
+        window.location.href = 'login.html';
+    }
 }
 
 function startAutoProduction() {
@@ -692,14 +960,19 @@ function calculateCPS() {
     return gameState.buildings.reduce((sum, building) => sum + building.count * building.production, 0);
 }
 
-function updateDisplay() {
+function updateDisplay(options) {
+    const opts = options || {};
     DOM.cookiesDisplay.textContent = formatNumber(Math.floor(gameState.cookies));
     DOM.cpsDisplay.textContent = calculateCPS().toFixed(1);
     DOM.clicksDisplay.textContent = gameState.clicks;
     // check for achievements each display update
     checkAchievements();
-    if (arguments[0] === undefined || arguments[0].renderBuildings !== false) {
+    if (opts.renderBuildings !== false) {
         renderBuildings();
+    }
+    // re-render upgrades so visual affordance matches current cookies
+    if (opts.renderUpgrades !== false) {
+        renderUpgrades();
     }
 }
 
@@ -727,7 +1000,8 @@ function saveGame() {
         clickPower: gameState.clickPower,
         buildings: gameState.buildings.map(({ id, count, cost }) => ({ id, count, cost })),
         upgradesUnlocked: gameState.upgradesUnlocked || [],
-        achievementsUnlocked: gameState.achievementsUnlocked || []
+        achievementsUnlocked: gameState.achievementsUnlocked || [],
+        username: gameState.username || getCurrentUser() || ''
     };
 
     localStorage.setItem('cookieClickerSave', JSON.stringify(save));
@@ -764,6 +1038,11 @@ function loadGame() {
         }
         if (Array.isArray(parsed.achievementsUnlocked)) {
             gameState.achievementsUnlocked = parsed.achievementsUnlocked;
+        }
+        // load username from current session or saved user
+        const savedUser = getCurrentUser();
+        if (savedUser) {
+            gameState.username = savedUser;
         }
     } catch (error) {
         console.warn('Failed to load saved game:', error);

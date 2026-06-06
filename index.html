@@ -6,7 +6,7 @@
     <title>Cookie Clicker Clone</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body data-page="game">
     <div class="game-wrapper">
         <header class="game-header">
             <div class="logo">
@@ -14,6 +14,10 @@
                 <span class="logo-subtitle">Clone Edition</span>
                 <span class="logo-secret">Rowan Marflitt</span>
                 <span class="external-link">Local copy</span>
+                <div class="user-panel">
+                    <span id="usernameDisplay" class="username-display">Guest</span>
+                    <button id="logoutBtn" type="button" class="small-button" style="display:none">Logout</button>
+                </div>
             </div>
             <div class="status-bar">
                 <div class="status-item">
