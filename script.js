@@ -385,12 +385,13 @@ function renderUpgrades(loadMore = false) {
         const u = ALL_UPGRADES[i];
         const unlocked = gameState.upgradesUnlocked.includes(u.id);
         const canBuy = !unlocked && gameState.cookies >= u.cost;
+        const displayCost = unlocked ? 'Purchased' : formatNumber(u.cost);
         const card = document.createElement('div');
-        card.className = `upgrade-item${canBuy ? '' : ' disabled'}`;
-        card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;"><strong>${u.name}</strong><span>${formatNumber(u.cost)}</span></div><div style="font-size:0.85rem;color:#d4c3a8;margin-top:6px">${u.description}</div>`;
+        card.className = `upgrade-item${unlocked ? ' bought' : ''}${canBuy ? '' : ' disabled'}`;
+        card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;"><strong>${u.name}</strong><span class="upgrade-status">${displayCost}</span></div><div style="font-size:0.85rem;color:#d4c3a8;margin-top:6px">${u.description}</div>`;
         // Always attach a click handler so clicks work even if affordability changes
         card.addEventListener('click', () => {
-            if (gameState.upgradesUnlocked.includes(u.id)) return;
+            if (unlocked) return;
             if (gameState.cookies >= u.cost) {
                 buyUpgrade(u.id);
             } else {
@@ -415,9 +416,9 @@ function refreshUpgradesDisplay() {
         if (!u) return;
         const unlocked = gameState.upgradesUnlocked.includes(u.id);
         const canBuy = !unlocked && gameState.cookies >= u.cost;
-        card.className = `upgrade-item${unlocked ? ' bought' : ''}${!canBuy ? ' disabled' : ''}`;
         const displayCost = unlocked ? 'Purchased' : formatNumber(u.cost);
-        card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;"><strong>${u.name}</strong><span>${displayCost}</span></div><div style="font-size:0.85rem;color:#d4c3a8;margin-top:6px">${u.description}</div>`;
+        card.className = `upgrade-item${unlocked ? ' bought' : ''}${canBuy ? '' : ' disabled'}`;
+        card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;"><strong>${u.name}</strong><span class="upgrade-status">${displayCost}</span></div><div style="font-size:0.85rem;color:#d4c3a8;margin-top:6px">${u.description}</div>`;
         card.onclick = canBuy ? () => buyUpgrade(u.id) : null;
     });
 }
@@ -987,9 +988,9 @@ function updateDisplay(options) {
     if (opts.renderBuildings !== false) {
         renderBuildings();
     }
-    // re-render upgrades so visual affordance matches current cookies
+    // refresh upgrades affordance without resetting loaded pages
     if (opts.renderUpgrades !== false) {
-        renderUpgrades();
+        refreshUpgradesDisplay();
     }
 }
 
