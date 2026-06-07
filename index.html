@@ -52,10 +52,20 @@
             </main>
 
             <aside class="sidebar">
-                <section class="panel store-panel">
-                    <h2>Buildings</h2>
-                    <div id="buildingsContainer" class="buildings-container"></div>
-                </section>
+                <div class="sidebar-columns">
+                    <section class="panel store-panel">
+                        <h2>Buildings</h2>
+                        <div id="buildingsContainer" class="buildings-container"></div>
+                    </section>
+                    <section class="panel upgrades-panel">
+                        <h2>Upgrades</h2>
+                        <div id="upgradesContainer" class="buildings-container"></div>
+                        <div class="panel-actions">
+                            <button type="button" id="buyAllUpgrades" class="small-button buy-all-btn">Buy All</button>
+                            <button type="button" id="loadMoreUpgrades" class="small-button">Load more</button>
+                        </div>
+                    </section>
+                </div>
 
                 <section class="panel admin-panel">
                     <h2>Admin Panel</h2>
@@ -83,14 +93,6 @@
                         <button id="adminResetBtn" type="button">Reset game</button>
                     </div>
                     <div id="adminOutput" class="admin-output">Available commands: add cookies X, set cookies X, add &lt;building&gt; &lt;count&gt;, unlock all, reset.</div>
-                </section>
-                <section class="panel upgrades-panel">
-                    <h2>Upgrades</h2>
-                    <div id="upgradesContainer" class="buildings-container"></div>
-                    <div style="margin-top:8px; text-align:center;display:flex;gap:8px;justify-content:center;">
-                        <button type="button" id="buyAllUpgrades" class="small-button buy-all-btn">Buy All</button>
-                        <button type="button" id="loadMoreUpgrades" class="small-button">Load more</button>
-                    </div>
                 </section>
 
                 <section class="panel achievements-panel">

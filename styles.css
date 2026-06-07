@@ -26,12 +26,13 @@ body::before {
 }
 
 .game-wrapper {
-    width: min(1180px, 100%);
+    width: min(1440px, 100%);
+    max-width: 100%;
     background: rgba(17, 14, 11, 0.96);
     border: 2px solid rgba(255, 214, 125, 0.18);
     border-radius: 28px;
     box-shadow: 0 30px 100px rgba(0, 0, 0, 0.45);
-    overflow: hidden;
+    overflow: visible;
 }
 
 .game-header {
@@ -228,7 +229,7 @@ body::before {
 
 .game-layout {
     display: grid;
-    grid-template-columns: 1.45fr 0.95fr;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.05fr);
     gap: 24px;
     padding: 32px 34px 38px;
 }
@@ -239,6 +240,36 @@ body::before {
     border: 1px solid rgba(255, 255, 255, 0.10);
     border-radius: 26px;
     padding: 28px;
+    min-width: 0;
+}
+
+.panel {
+    min-width: 0;
+}
+
+.buildings-container {
+    min-width: 0;
+}
+
+.sidebar-columns {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.85fr) minmax(260px, 1.15fr);
+    gap: 18px;
+    margin-bottom: 20px;
+}
+
+.panel-actions {
+    margin-top: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+@media (max-width: 1100px) {
+    .sidebar-columns {
+        grid-template-columns: 1fr;
+    }
 }
 
 .cookie-card {
@@ -333,10 +364,12 @@ body::before {
     background: rgba(255, 255, 255, 0.055);
     border: 1px solid rgba(255, 255, 255, 0.10);
     border-radius: 20px;
-    padding: 20px 18px;
+    padding: 16px 14px;
     cursor: pointer;
     transition: background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
     touch-action: manipulation;
+    overflow: hidden;
+    word-break: break-word;
 }
 
 .building-item:hover:not(.disabled) {
@@ -490,9 +523,10 @@ body::before {
 .building-info {
     display: flex;
     justify-content: space-between;
-    gap: 16px;
+    gap: 8px;
     color: #d4c3a8;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+    flex-wrap: wrap;
 }
 
 .building-cost,
@@ -506,6 +540,13 @@ body::before {
 
 .building-production {
     color: #9fe3a0;
+    flex-shrink: 0;
+}
+
+.building-cost {
+    color: #ffd86c;
+    flex-shrink: 0;
+    text-align: right;
 }
 
 .admin-controls {
@@ -581,23 +622,54 @@ body::before {
     .game-layout {
         grid-template-columns: 1fr;
     }
+
+    .sidebar-columns {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        padding: 22px;
+    }
+
+    .main-panel {
+        padding: 22px;
+    }
 }
 
 @media (max-width: 720px) {
-    .game-header,
-    .game-layout,
-    .main-panel,
-    .sidebar {
+    body {
+        padding: 12px;
+    }
+
+    .game-wrapper {
+        width: 100%;
+        border-radius: 22px;
+    }
+
+    .game-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
         padding: 18px;
     }
 
     .status-bar {
         justify-content: center;
+        gap: 12px;
     }
 
     .big-cookie {
-        width: 320px;
-        height: 320px;
+        width: 280px;
+        height: 280px;
+    }
+
+    .main-panel,
+    .sidebar {
+        padding: 20px;
+    }
+
+    .sidebar-columns {
+        grid-template-columns: 1fr;
     }
 
     .admin-controls {
@@ -605,6 +677,10 @@ body::before {
     }
 
     .admin-buttons {
+        flex-direction: column;
+    }
+
+    .panel-actions {
         flex-direction: column;
     }
 }
